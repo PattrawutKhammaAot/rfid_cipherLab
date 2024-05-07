@@ -1,0 +1,98 @@
+
+1.วางไฟล์ใน Android -> app -> Create Folder libs และวางไฟล์เลย เช่น RfidAPI_V1_0_24_api_level31.jar
+2.  set dependencies dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version" // มาจากไฟล์อยู่แล้ว
+    implementation files('libs/RfidAPI_V1_0_24_api_level31.jar') // อันนี้ที่เพิ่มเข้าไป
+
+}
+
+==============================================================================================
+**วิธีอันนี้เป็นการตรวจสอบชื่อ Package Name ซึ่ง จะใช้หรือไม่ใช้ก็ได้
+สร้างไฟล์ใน Java ก่อน App-Src-main-java
+import java.io.*;
+        import java.util.jar.*;
+        import java.util.Enumeration;
+
+public class Explorer {
+    public static void main(String[] args) {
+        try {
+            JarFile jarFile = new JarFile("D:/work-mobile/flutteAppJar/flutter_app_jar/android/app/libs/RfidAPI_V1_0_24_api_level31.jar");
+
+            Enumeration<JarEntry> entries = jarFile.entries();
+
+            while (entries.hasMoreElements()) {
+                JarEntry entry = entries.nextElement();
+                if (entry.getName().endsWith(".class")) {
+                    System.out.println(entry.getName());
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+javac Explorer
+java Explorer
+
+================================================================================================
+สร้างไฟล์ java เป็นสื่อกลาง ใน io.flutter.pugins 
+package io.flutter.plugins;
+
+import io.flutter.embedding.engine.plugins.FlutterPlugin; //setting packge io จะได้เรียกใช้ง่ายๆใน MainActivity
+import io.flutter.plugin.common.MethodCall;
+import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
+import com.cipherlab.rfidapi.RfidManager; // ตรวจสอบชื่อ packakge เผื่อที่จะนำมาใช้งานได้ถูกต้อง
+
+public class MyFlutterPlugin implements FlutterPlugin, MethodCallHandler {
+    private MethodChannel channel;
+    private RfidManager mRfidManager; //ต้องดู Document ว่าชื่อ Classอะไรจะได้เรียกใช้ถูก
+
+    @Override
+    public void onAttachedToEngine(FlutterPluginBinding binding) {
+        channel = new MethodChannel(binding.getBinaryMessenger(),"com.example/customChannel");
+        channel.setMethodCallHandler(this);
+        mRfidManager = RfidManager.InitInstance(binding.getApplicationContext()); // สร้าง InitInstance ขึ้นมาเพื่อทมี่จะเรียกใช้ถูกต้อง
+    }
+
+    @Override
+    public void onMethodCall(MethodCall call, MethodChannel.Result result) {
+        if (call.method.equals("getServiceVersion")) {
+            if (mRfidManager != null) {
+                String version = mRfidManager.GetServiceVersion();
+                result.success(version);
+            } else {
+                result.error("NULL_MANAGER", "ReaderManager is not initialized", null);
+            }
+        } else {
+            result.notImplemented();
+        }
+    }
+
+
+  @Override
+public void onDetachedFromEngine(FlutterPluginBinding binding) {
+    if (mRfidManager != null) {
+        mRfidManager.Release();
+        mRfidManager = null;
+    }
+
+    channel.setMethodCallHandler(null);
+}
+}
+=====================================================================================
+MainActivity.kt  set up plugins
+package com.example.flutter_app_jar
+
+import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugins.MyFlutterPlugin
+
+class MainActivity: FlutterActivity() {
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        flutterEngine.plugins.add(MyFlutterPlugin())
+    }
+}
+
+
