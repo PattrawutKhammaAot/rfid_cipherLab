@@ -66,6 +66,7 @@ public class MyFlutterPlugin implements FlutterPlugin, MethodCallHandler {
     Button b1 = null;
     CheckBox mCheckBox_SwitchStatus = null;
 	CheckBox mCheckBox_ScanMode = null;
+	private ScanMode selMode;
  
     @Override
     public void onAttachedToEngine(FlutterPluginBinding binding) {
@@ -90,8 +91,10 @@ public class MyFlutterPlugin implements FlutterPlugin, MethodCallHandler {
 		@Override
 		public void onReceive(Context context, Intent intent) {
           
-      
+			
 			try{
+					
+		
                  if(intent.getAction().equals(GeneralString.Intent_RFIDSERVICE_TAG_DATA))
 			{
 				/* 
@@ -138,6 +141,10 @@ public class MyFlutterPlugin implements FlutterPlugin, MethodCallHandler {
        
         channel.invokeMethod("onTagScanned", epc);
     }
+	private void sendConnection(boolean status) {
+       
+        channel.invokeMethod("Connection", status);
+    }
 
 
    @Override
@@ -147,7 +154,47 @@ public class MyFlutterPlugin implements FlutterPlugin, MethodCallHandler {
             case "getServiceVersion":
                 String version = mRfidManager.GetServiceVersion();
                 result.success(version);
-                break;   
+                break;
+			case "TrgMode":
+			mRfidManager.SoftScanTrigger(Boolean.parseBoolean(call.argument("statusTrg").toString()));
+			result.success("Scanning");
+			break;
+			case "Connection":
+				result.success(mRfidManager.GetConnectionStatus());
+				break;
+			case "GetScanMode":
+				result.success(mRfidManager.GetScanMode().toString());
+				break;
+				case "SetScanMode":
+				
+				if(call.argument("mode").toString().equalsIgnoreCase("alternate")){
+					int re = mRfidManager.SetScanMode(selMode.Alternate);
+					if(re != ClResult.S_OK.ordinal()){
+						result.success(mRfidManager.GetLastError());
+					}else{
+						result.success("Set Mode Alternate Success");
+					}
+
+				}else if(call.argument("mode").toString().equalsIgnoreCase("single")){
+					int re = mRfidManager.SetScanMode(selMode.Single);
+					if(re != ClResult.S_OK.ordinal()){
+						result.success(mRfidManager.GetLastError());
+					}else{
+						result.success("Set Mode Once Success");
+					}
+					
+				}else if(call.argument("mode").toString().equalsIgnoreCase("continuous")){
+					int re = mRfidManager.SetScanMode(selMode.Continuous);
+					if(re != ClResult.S_OK.ordinal()){
+						result.success(mRfidManager.GetLastError());
+					}else{
+						result.success("Set Mode Continuous Success");
+					}
+				}else{
+					result.success("Error");
+				}
+				
+				break;
             default:
                 result.notImplemented();
                 break;

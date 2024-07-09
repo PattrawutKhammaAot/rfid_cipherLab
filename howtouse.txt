@@ -32,7 +32,7 @@ public class Explorer {
     }
 }
 
-javac Explorer
+javac Explorer.java
 java Explorer
 
 ================================================================================================

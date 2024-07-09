@@ -31,8 +31,8 @@ class MyNativeFunction {
 
   static Future<bool> GetConnection() async {
     try {
-      final result = await platform.invokeMethod('GetConnection');
-      print(jsonEncode(result));
+      final result = await platform.invokeMethod('Connection');
+
       return result;
     } catch (e) {
       print(e);
@@ -150,14 +150,26 @@ class MyNativeFunction {
     }
   }
 
-  static Future<dynamic> GetScanMode() async {
+  static Future<String> GetScanMode() async {
     try {
       final result = await platform.invokeMethod('GetScanMode');
       print("JsonGetScanMode ${result}");
-      return result;
+      return result.toString();
     } catch (e) {
       print("Error this ${e}");
       return Future.error(e);
+    }
+  }
+
+  static Future<String> SetScanMode(String mode) async {
+    try {
+      print("Send Mode$mode");
+      final result = await platform
+          .invokeMethod('SetScanMode', {'mode': mode.toLowerCase()});
+      print("Status Result = ${result}");
+      return result;
+    } catch (e) {
+      throw Exception();
     }
   }
 }
